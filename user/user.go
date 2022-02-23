@@ -2,10 +2,10 @@ package user
 
 type User struct {
 	Browsers []string `json:"browsers"`
-	Company  string   `json:"company"`
-	Country  string   `json:"country"`
+	Company  string   `json:"-"`
+	Country  string   `json:"-"`
 	Email    string   `json:"email"`
-	Job      string   `json:"job"`
+	Job      string   `json:"-"`
 	Name     string   `json:"name"`
-	Phone    string   `json:"phone"`
+	Phone    string   `json:"-"`
 }

@@ -1,26 +1,26 @@
 package main
 
 import (
+	json "encoding/json"
 	"fmt"
+	easyjson "github.com/mailru/easyjson"
+	jlexer "github.com/mailru/easyjson/jlexer"
+	jwriter "github.com/mailru/easyjson/jwriter"
 	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
-	json "encoding/json"
-	easyjson "github.com/mailru/easyjson"
-	jlexer "github.com/mailru/easyjson/jlexer"
-	jwriter "github.com/mailru/easyjson/jwriter"
 )
 
 type User struct {
 	Browsers []string `json:"browsers"`
-	Company  string   `json:"company"`
-	Country  string   `json:"country"`
+	Company  string   `json:"-"`
+	Country  string   `json:"-"`
 	Email    string   `json:"email"`
-	Job      string   `json:"job"`
+	Job      string   `json:"-"`
 	Name     string   `json:"name"`
-	Phone    string   `json:"phone"`
+	Phone    string   `json:"-"`
 }
 
 // вам надо написать более быструю оптимальную этой функции
@@ -36,24 +36,19 @@ func FastSearch(out io.Writer) {
 	}
 
 	r := regexp.MustCompile("@")
-	seenBrowsers := []string{}
+	seenBrowsers := make([]string, 0, 1000)
 	uniqueBrowsers := 0
 	foundUsers := ""
 
 	lines := strings.Split(string(fileContents), "\n")
 
-	users := make([]User, 0)
-	for _, line := range lines {
+	for i, line := range lines {
 		user := &User{}
 		// fmt.Printf("%v %v\n", err, line)
-		err := easyjson.Unmarshal([]byte(line), user)
+		err := user.UnmarshalJSON([]byte(line))
 		if err != nil {
 			panic(err)
 		}
-		users = append(users, *user)
-	}
-
-	for i, user := range users {
 
 		isAndroid := false
 		isMSIE := false
@@ -100,6 +95,7 @@ func FastSearch(out io.Writer) {
 		email := r.ReplaceAllString(user.Email, " [at] ")
 		foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i, user.Name, email)
 	}
+
 
 	fmt.Fprintln(out, "found users:\n"+foundUsers)
 	fmt.Fprintln(out, "Total unique browsers", len(seenBrowsers))
@@ -156,18 +152,10 @@ func easyjson9e1087fdDecodeHw3BenchUser(in *jlexer.Lexer, out *User) {
 				}
 				in.Delim(']')
 			}
-		case "company":
-			out.Company = string(in.String())
-		case "country":
-			out.Country = string(in.String())
 		case "email":
 			out.Email = string(in.String())
-		case "job":
-			out.Job = string(in.String())
 		case "name":
 			out.Name = string(in.String())
-		case "phone":
-			out.Phone = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -199,34 +187,14 @@ func easyjson9e1087fdEncodeHw3BenchUser(out *jwriter.Writer, in User) {
 		}
 	}
 	{
-		const prefix string = ",\"company\":"
-		out.RawString(prefix)
-		out.String(string(in.Company))
-	}
-	{
-		const prefix string = ",\"country\":"
-		out.RawString(prefix)
-		out.String(string(in.Country))
-	}
-	{
 		const prefix string = ",\"email\":"
 		out.RawString(prefix)
 		out.String(string(in.Email))
 	}
 	{
-		const prefix string = ",\"job\":"
-		out.RawString(prefix)
-		out.String(string(in.Job))
-	}
-	{
 		const prefix string = ",\"name\":"
 		out.RawString(prefix)
 		out.String(string(in.Name))
-	}
-	{
-		const prefix string = ",\"phone\":"
-		out.RawString(prefix)
-		out.String(string(in.Phone))
 	}
 	out.RawByte('}')
 }
