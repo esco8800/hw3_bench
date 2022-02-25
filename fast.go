@@ -34,17 +34,17 @@ func FastSearch(out io.Writer) {
 	r := regexp.MustCompile("@")
 	seenBrowsers := make([]string, 0, 1000)
 	uniqueBrowsers := 0
-	foundUsers := ""
+	foundUsers := make([]string, 0, 1000)
 	i := 0
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := scanner.Bytes()
 		i++
 
 		user := &User{}
 		// fmt.Printf("%v %v\n", err, line)
-		err := user.UnmarshalJSON([]byte(line))
+		err := user.UnmarshalJSON(line)
 		if err != nil {
 			panic(err)
 		}
@@ -92,14 +92,14 @@ func FastSearch(out io.Writer) {
 
 		// log.Println("Android and MSIE user:", user["name"], user["email"])
 		email := r.ReplaceAllString(user.Email, " [at] ")
-		foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i - 1, user.Name, email)
+		foundUsers = append(foundUsers, fmt.Sprintf("[%d] %s <%s>\n", i - 1, user.Name, email))
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Fprintln(out, "found users:\n"+foundUsers)
+	fmt.Fprintln(out, "found users:\n"+strings.Join(foundUsers, ""))
 	fmt.Fprintln(out, "Total unique browsers", len(seenBrowsers))
 }
 
